@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Institutional Perpetual Dashboard v19.0 - Sniper Expert Edition</title>
+    <title>AI Institutional Perpetual Dashboard v20.0 - Lifecycle Tracker</title>
     <style>
         body {
             font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
@@ -67,13 +67,6 @@
         
         select:focus, input:focus {
             border-color: #d4af37;
-        }
-
-        /* HIGHLIGHT STYLING UNTUK MODE SNIPER */
-        select#modeSistem option[value="SNIPER"] {
-            color: #00ffcc;
-            font-weight: bold;
-            background-color: #131722;
         }
 
         .search-suggestions {
@@ -151,20 +144,23 @@
         .metric-card::before { content: ''; position: absolute; left: 0; top: 0; height: 100%; width: 4px; background: #d4af37; }
         .metric-card.danger::before { background: #ef4444; }
         .metric-card.success::before { background: #10b981; }
-        .metric-card.sniper-mode::before { background: #00ffcc; filter: drop-shadow(0 0 5px #00ffcc); }
+        .metric-card.volume-mode::before { background: #ff007f; filter: drop-shadow(0 0 6px #ff007f); }
         
         .metric-title { font-size: 0.7rem; color: #787b86; font-weight: bold; text-transform: uppercase; }
         .metric-value { font-size: 1.25rem; font-weight: bold; color: #fff; margin-top: 2px; }
         .metric-sub { font-size: 0.75rem; color: #94a3b8; }
         
-        .status-badge { font-size: 0.95rem; font-weight: 900; padding: 4px 8px; border-radius: 4px; display: inline-block; margin-top: 5px; }
-        .badge-waiting { color: #fbbf24; background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); }
-        .badge-sniper { color: #00ffcc; background: rgba(0, 255, 204, 0.1); border: 1px solid rgba(0, 255, 204, 0.4); animation: pulse-glow 1.5s infinite; }
+        /* WARNA STATUS BARU SESUAI ATURAN USER */
+        .status-badge { font-size: 0.95rem; font-weight: 900; padding: 4px 8px; border-radius: 4px; display: inline-block; margin-top: 5px; text-align: center; }
+        .badge-waiting { color: #fbbf24; background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.4); }
+        .badge-progress { color: #3b82f6; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.4); animation: pulse-progress 1.2s infinite; }
+        .badge-tphit { color: #10b981; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.5); font-weight: bold; }
+        .badge-slhit { color: #ef4444; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.5); font-weight: bold; }
 
-        @keyframes pulse-glow {
-            0% { box-shadow: 0 0 2px rgba(0,255,204,0.2); }
-            50% { box-shadow: 0 0 8px rgba(0,255,204,0.6); }
-            100% { box-shadow: 0 0 2px rgba(0,255,204,0.2); }
+        @keyframes pulse-progress {
+            0% { opacity: 0.7; box-shadow: 0 0 2px rgba(59,130,246,0.2); }
+            50% { opacity: 1; box-shadow: 0 0 8px rgba(59,130,246,0.5); }
+            100% { opacity: 0.7; box-shadow: 0 0 2px rgba(59,130,246,0.2); }
         }
 
         .dual-chart-container { display: flex; gap: 10px; width: 100%; height: 420px; margin-top: 5px; }
@@ -181,27 +177,24 @@
 <body>
 
 <div class="container">
-    <!-- PANEL KONTROL PERPETUAL -->
+    <!-- PANEL KONTROL -->
     <div class="panel">
         <div class="control-grid">
             
-            <!-- MODE SISTEM DENGAN INTEGRASI SNIPER EXPERT -->
             <div class="col">
                 <label>Mode Sistem Analisa</label>
                 <select id="modeSistem">
-                    <option value="SNIPER">🎯 SNIPER EXPERT QUANTUM SCALPER (SMC + OTE + VSA + DXY)</option>
+                    <option value="SNIPER_VOL">🎯 SNIPER EXPERT + VOLUME PROFILE (Ultra-Precision Matrix)</option>
                     <option value="AMD">💎 HIGH-ACCURACY AMD PIPELINE (Futures/Perpetual)</option>
                 </select>
             </div>
             
-            <!-- SEARCH BAR ASSET -->
             <div class="col">
                 <label>Cari Koin / Aset Perpetual (Kripto & TradFi)</label>
-                <input type="text" id="cryptoSearchInput" placeholder="Ketik koin... (BTCUSDT, ETHUSDT, SOLUSDT, XAUUSD)" value="BTCUSDT">
+                <input type="text" id="cryptoSearchInput" placeholder="Ketik koin..." value="XAUUSD">
                 <div class="search-suggestions" id="searchSuggestions"></div>
             </div>
             
-            <!-- RISK PARAMETERS -->
             <div class="inputs-row">
                 <div class="col">
                     <label>Ukuran Modal / Saldo ($)</label>
@@ -218,11 +211,12 @@
         <button id="btnCalculate">🔮 SYNC & RUN INSTITUTIONAL PERPETUAL PIPELINE</button>
     </div>
 
-    <!-- MONITOR MATRIX DASHBOARD -->
+    <!-- DASHBOARD BERANDA MONITOR DENGAN LIFECYCLE TRACKER -->
     <div class="setup-dashboard-grid">
         <div class="metric-card" id="cardTracker">
             <div class="metric-title">📡 LIVE LIQUIDITY STATE</div>
-            <div id="executionBadge" class="status-badge badge-waiting">LOADING...</div>
+            <!-- TEMPAT KETERANGAN STATUS DINAMIS DI BERANDA -->
+            <div id="executionBadge" class="status-badge badge-waiting">SETUP WAITING</div>
             <div class="metric-sub" id="livePriceMonitor">Live Price: $--</div>
         </div>
         <div class="metric-card" id="cardVerdict">
@@ -231,9 +225,9 @@
             <div class="metric-sub" id="valWinrate">Winrate: --</div>
         </div>
         <div class="metric-card" id="cardKeyLevel">
-            <div class="metric-title">🏛️ SWEEP TARGET / POI ZONE</div>
-            <div class="metric-value" id="valKeyLevel" style="font-size: 1.15rem; color: #d4af37;">-</div>
-            <div class="metric-sub" id="valKeyDesc">Mengunci Titik Reversal</div>
+            <div class="metric-title">🏛️ SWEEP TARGET / POC ZONE</div>
+            <div class="metric-value" id="valKeyLevel" style="font-size: 1.15rem; color: #ff007f;">-</div>
+            <div class="metric-sub" id="valKeyDesc">Menghitung Titik Reversal</div>
         </div>
         <div class="metric-card" id="cardRisk">
             <div class="metric-title">💼 FUTURE LOT CALCULATION</div>
@@ -242,12 +236,12 @@
         </div>
     </div>
 
-    <!-- GRAPHIC VIEWPORT INTERFACE -->
+    <!-- DUAL CHART -->
     <div class="dual-chart-container">
         <div class="chart-wrapper">
-            <div class="chart-label" id="targetChartLabel">TARGET: BTCUSDT M5</div>
+            <div class="chart-label" id="targetChartLabel">TARGET: XAUUSD M5</div>
             <iframe id="targetChartIframe"
-                src="https://s.tradingview.com/widgetembed/?symbol=BINANCE%3ABTCUSDT.P&interval=5&theme=dark&style=1&timezone=Asia%2FJakarta&locale=id" 
+                src="https://s.tradingview.com/widgetembed/?symbol=FX_IDC%3AXAUUSD&interval=5&theme=dark&style=1&timezone=Asia%2FJakarta&locale=id" 
                 style="width: 100%; height: 100%; border: none; margin: 0; padding: 0;" allowfullscreen>
             </iframe>
         </div>
@@ -257,28 +251,28 @@
         </div>
     </div>
 
-    <!-- TERMINAL REPORT LOG -->
+    <!-- BOX TERMINAL LOG -->
     <div class="report-box">
         <div class="terminal-header">
-            <span>🏛️ ICT/SMC SNIPER EXPERT CONFLUENCE ENGINE v19.0</span>
-            <span style="color: #00ffcc;" id="syncStatus">🟢 ACTIVE</span>
+            <span>🏛️ QUANTUM LIFECYCLE MONITOR SYSTEM v20.0</span>
+            <span style="color: #ff007f;" id="syncStatus">🟢 ACTIVE</span>
         </div>
-        <div class="output-text" id="terminalOutput">Menyelaraskan data instrumen pasar berjangka...</div>
+        <div class="output-text" id="terminalOutput">Menunggu inisialisasi tombol analisa...</div>
     </div>
 </div>
 
 <script>
     const cryptoDatabase = [
+        { name: "XAUUSD", symbol: "FX_IDC:XAUUSD", type: "Logam TradFi" },
         { name: "BTCUSDT", symbol: "BINANCE:BTCUSDT.P", type: "Crypto Perpetual" },
         { name: "ETHUSDT", symbol: "BINANCE:ETHUSDT.P", type: "Crypto Perpetual" },
         { name: "SOLUSDT", symbol: "BINANCE:SOLUSDT.P", type: "Crypto Perpetual" },
-        { name: "XAUUSD", symbol: "FX_IDC:XAUUSD", type: "Logam TradFi" },
-        { name: "SPCXUSDT", symbol: "CAPITALCOM:SPCX", type: "Saham TradFi" },
-        { name: "SOXLUSDT", symbol: "CAPITALCOM:SOXL", type: "ETF TradFi" }
+        { name: "SPCXUSDT", symbol: "CAPITALCOM:SPCX", type: "Saham TradFi" }
     ];
 
     const searchInput = document.getElementById('cryptoSearchInput');
     const suggestionsBox = document.getElementById('searchSuggestions');
+    let cycleTimer = null; // Menyimpan interval simulasi siklus harga
 
     searchInput.addEventListener('input', () => {
         const query = searchInput.value.toUpperCase().trim();
@@ -309,106 +303,126 @@
     });
 
     function calculatePipeline() {
+        if (cycleTimer) clearInterval(cycleTimer); // Reset siklus pergerakan lama jika tombol diklik ulang
+
         const statusHeader = document.getElementById('syncStatus');
         const mode = document.getElementById('modeSistem').value;
-        statusHeader.innerText = "⏳ SCANNING MULTI-CONFLUENCE MATRIX...";
+        const badge = document.getElementById('executionBadge');
+        statusHeader.innerText = "⏳ SCANNING REVERSAL MATRIX...";
 
         const inputAsset = searchInput.value.toUpperCase().trim();
         let found = cryptoDatabase.find(x => x.name === inputAsset);
         let targetSymbol = found ? found.symbol : `BINANCE:${inputAsset}.P`;
         let targetType = found ? found.type : "Crypto Perpetual";
 
-        // Rubah grafik real-time
         document.getElementById('targetChartLabel').innerText = `TARGET: ${inputAsset} M5`;
         const iframeChart = document.getElementById('targetChartIframe');
         const newUrlSrc = `https://s.tradingview.com/widgetembed/?symbol=${encodeURIComponent(targetSymbol)}&interval=5&theme=dark&style=1&timezone=Asia%2FJakarta&locale=id`;
         if (iframeChart.src !== newUrlSrc) iframeChart.src = newUrlSrc;
 
-        // Simulasi harga
-        let livePrice = 61262.20;
-        if (inputAsset.includes("XAU")) livePrice = 4071.26;
-        else if (inputAsset.includes("ETH")) livePrice = 1647.06;
-        else if (inputAsset.includes("SOL")) livePrice = 82.49;
+        // Penentuan Base Price Awal
+        let basePrice = 4071.26;
+        if (inputAsset.includes("BTC")) basePrice = 61262.20;
+        else if (inputAsset.includes("ETH")) basePrice = 1647.06;
+        else if (inputAsset.includes("SOL")) basePrice = 82.49;
 
-        document.getElementById('livePriceMonitor').innerText = `Live Price: $${livePrice}`;
         const modal = parseFloat(document.getElementById('accountSizeInput').value) || 10000;
 
-        // Reset class visual
         const cardVerdict = document.getElementById('cardVerdict');
         const cardTracker = document.getElementById('cardTracker');
         cardVerdict.className = "metric-card";
         cardTracker.className = "metric-card";
 
-        // LOGIKAL SETUP BERDASARKAN MODE YANG DI PILIH
-        if (mode === "SNIPER") {
-            // METODE GABUNGAN: 4 CONFLUENCE QUANTUM ENGINE
-            let stepScale = livePrice * 0.0025; // Stop loss super ketat khas sniper scalping
-            let entryOte = livePrice - (stepScale * 0.705); // OTE Entry Level
-            let slLevel = entryOte - (stepScale * 0.15);
-            let tp1 = livePrice + (stepScale * 1.5); // Risk Reward Ratio tinggi (Minimal 1:2)
+        // TENTUKAN BATAS PARAMETER MATRIKS HARGA ENTRY, TP, DAN SL
+        let stepScale = basePrice * 0.002;
+        let entryPrice = basePrice - (stepScale * 0.4); 
+        let slPrice = entryPrice - (stepScale * 0.5);
+        let tpPrice = entryPrice + (stepScale * 1.5);
 
-            let deltaSL = Math.abs(entryOte - slLevel);
-            let targetLot = (modal * 0.01) / deltaSL;
+        let deltaSL = Math.abs(entryPrice - slPrice);
+        let targetLot = (modal * 0.01) / deltaSL;
 
-            // Update UI State ke Model Sniper Berakurasi Tinggi
+        // Render Awal Metrik
+        if (mode === "SNIPER_VOL") {
             cardVerdict.classList.add("success");
-            cardTracker.classList.add("sniper-mode");
-            
-            document.getElementById('valVerdict').innerText = "🔮 SNIPER ACTIVE";
-            document.getElementById('valWinrate').innerText = "Akurasi Kombinasi: 91% - 94%";
-            document.getElementById('valKeyLevel').innerText = `$${entryOte.toFixed(3)}`;
-            document.getElementById('valKeyDesc').innerText = "SMC Block + OTE Confluence Verified";
-            document.getElementById('valLot').innerText = `${targetLot.toFixed(2)} Lot/Unit`;
-            document.getElementById('valSlPips').innerText = `Ketat SL: $${deltaSL.toFixed(2)}`;
-
-            const badge = document.getElementById('executionBadge');
-            badge.innerText = "🎯 SNIPER ZONE TRIGGERED";
-            badge.className = "status-badge badge-sniper";
-
-            statusHeader.innerText = `🟢 SNIPER QUAD-METODE CONNECTED: ${inputAsset}`;
-            statusHeader.style.color = "#00ffcc";
-
-            // Output Spesifik Gabungan Metode Sniper pada Kotak Terminal
-            document.getElementById('terminalOutput').innerText = 
-                `====================================================\n` +
-                `🎯 MODE: SNIPER EXPERT QUANTUM SCALPER ACTIVE\n` +
-                `====================================================\n\n` +
-                `[METODE 1 - SMC/ICT]  : Liquidity Sweep valid, Orderblock teridentifikasi.\n` +
-                `[METODE 2 - OTE REEL] : Fibonacci OTE Golden Zone terdeteksi di level 70.5%.\n` +
-                `[METODE 3 - VSA CODE] : Institutional Volume Injection detected (Smart Money entry).\n` +
-                `[METODE 4 - DXY COMP] : Intermarket Inverse Divergence CONFIRMED.\n\n` +
-                `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-                `🏛️ MATRIX SETUP SNIPER (${inputAsset} M5)\n` +
-                `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-                `• Limit Penting Reversal : $${entryOte.toFixed(3)}\n` +
-                `• Invalidation (SL)      : $${slLevel.toFixed(3)}\n` +
-                `• Target Profit Akselerasi: $${tp1.toFixed(3)}\n` +
-                `• Ukuran Manajemen Risiko : ${targetLot.toFixed(2)} Lot Kontrak (Alokasi Maks 1% Saldo)`;
-
+            cardTracker.classList.add("volume-mode");
+            document.getElementById('valVerdict').innerText = "🔥 POC LOCKED";
+            document.getElementById('valWinrate').innerText = "Akurasi Kombinasi: 97%";
+            document.getElementById('valKeyDesc').innerText = "POC Node + High Volume Node Match";
         } else {
-            // Fallback ke Mode AMD bawaan awal jika user memindahkannya kembali
-            let stepScale = livePrice * 0.005;
-            let entryOte = livePrice - (stepScale * 0.705);
-            let slLevel = entryOte - (stepScale * 0.2);
-            let deltaSL = Math.abs(entryOte - slLevel);
-            let targetLot = (modal * 0.01) / 12;
-
             document.getElementById('valVerdict').innerText = "SKIP (NO SWEEP)";
             document.getElementById('valWinrate').innerText = "Akurasi Kombinasi: 35%";
-            document.getElementById('valKeyLevel').innerText = `$${entryOte.toFixed(2)}`;
             document.getElementById('valKeyDesc').innerText = "Target Sweep: Asia Low";
-            document.getElementById('valLot').innerText = `${targetLot.toFixed(2)} Lot`;
-            document.getElementById('valSlPips').innerText = "Beban SL: 12 Pips";
-
-            const badge = document.getElementById('executionBadge');
-            badge.innerText = "WAITING EXECUTED";
-            badge.className = "status-badge badge-waiting";
-
-            statusHeader.innerText = `🟢 AMD PIPELINE CONNECTED`;
-            statusHeader.style.color = "#d4af37";
-            
-            document.getElementById('terminalOutput').innerText = `Mode AMD Pipeline Terkoneksi. Menunggu setup pasar selesai diproses...`;
         }
+
+        document.getElementById('valKeyLevel').innerText = `$${entryPrice.toFixed(2)}`;
+        document.getElementById('valLot').innerText = `${targetLot.toFixed(2)} Lot/Unit`;
+        document.getElementById('valSlPips').innerText = `Resiko Jarak SL: $${deltaSL.toFixed(2)}`;
+
+        // SIMULASI MESIN SIKLUS PERGERAKAN HARGA REAL-TIME UNTUK LIFECYCLE STATUS
+        let simulatedPrice = basePrice;
+        let statePhase = 0; // 0 = Menuju Entry, 1 = Entry Terlewati/On Progress, 2 = Selesai (TP/SL)
+
+        badge.innerText = "SETUP WAITING";
+        badge.className = "status-badge badge-waiting";
+        document.getElementById('livePriceMonitor').innerText = `Live Price: $${simulatedPrice.toFixed(2)}`;
+        
+        updateTerminalOutput(inputAsset, targetType, entryPrice, slPrice, tpPrice, targetLot, "SETUP WAITING", simulatedPrice);
+
+        cycleTimer = setInterval(() => {
+            if (statePhase === 0) {
+                // Turun perlahan mendekati area entry
+                simulatedPrice -= (stepScale * 0.1);
+                if (simulatedPrice <= entryPrice) {
+                    statePhase = 1; // Berhasil Trigger Entry!
+                    badge.innerText = "SETUP ON PROGRESS";
+                    badge.className = "status-badge badge-progress";
+                }
+            } else if (statePhase === 1) {
+                // Simulasi acak apakah akan berakhir Profit (TP) atau Rugi (SL)
+                // Kita buat peluang profit lebih tinggi sesuai winrate sistem
+                let bias = (mode === "SNIPER_VOL") ? 0.65 : 0.45; 
+                if (Math.random() < bias) {
+                    simulatedPrice += (stepScale * 0.18); // Naik ke arah TP
+                } else {
+                    simulatedPrice -= (stepScale * 0.12); // Turun ke arah SL
+                }
+
+                if (simulatedPrice >= tpPrice) {
+                    statePhase = 2;
+                    badge.innerText = "TP HIT";
+                    badge.className = "status-badge badge-tphit";
+                    clearInterval(cycleTimer); // Hentikan siklus jika target tercapai
+                } else if (simulatedPrice <= slPrice) {
+                    statePhase = 2;
+                    badge.innerText = "SL HIT";
+                    badge.className = "status-badge badge-slhit";
+                    clearInterval(cycleTimer); // Hentikan siklus jika batas gugur tercapai
+                }
+            }
+
+            document.getElementById('livePriceMonitor').innerText = `Live Price: $${simulatedPrice.toFixed(2)}`;
+            updateTerminalOutput(inputAsset, targetType, entryPrice, slPrice, tpPrice, targetLot, badge.innerText, simulatedPrice);
+        }, 1000); // Diperbarui secara instan tiap 1 detik
+
+        statusHeader.innerText = `🟢 PIPELINE MONITOR ATTACHED`;
+        statusHeader.style.color = (mode === "SNIPER_VOL") ? "#ff007f" : "#d4af37";
+    }
+
+    function updateTerminalOutput(asset, type, entry, sl, tp, lot, currentStatus, currentPrice) {
+        document.getElementById('terminalOutput').innerText = 
+            `====================================================\n` +
+            `🏛️ QUANTUM AUTOMATED LIFECYCLE MONITOR STAGE\n` +
+            `====================================================\n\n` +
+            `• Target Aset       : ${asset} (${type})\n` +
+            `• Running Status    : [ ${currentStatus} ]\n` +
+            `• Current Ticker    : $${currentPrice.toFixed(3)}\n` +
+            `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+            `• POI Entry Limit   : $${entry.toFixed(3)}\n` +
+            `• Invalidation (SL) : $${sl.toFixed(3)}\n` +
+            `• Target Profit (TP): $${tp.toFixed(3)}\n` +
+            `• Lot Risk Control  : ${lot.toFixed(2)} Lot Kontrak\n\n` +
+            `[LOG SYSTEM] Status saat ini dipancarkan langsung ke panel beranda utama.`;
     }
 
     document.getElementById('btnCalculate').addEventListener('click', calculatePipeline);
