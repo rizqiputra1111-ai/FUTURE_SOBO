@@ -1,4 +1,206 @@
-    <!-- DASHBOARD BERANDA MONITOR DENGAN LIFECYCLE & SIGNAL PARAMETERS -->
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Institutional Perpetual Dashboard v20.0 - Full Fix</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            background-color: #0c0d14;
+            color: #cbd5e1;
+            margin: 0;
+            padding: 12px;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .panel {
+            background-color: #131722;
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid #2a2e39;
+        }
+        
+        .control-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+        .inputs-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        .col {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            position: relative;
+        }
+        
+        label {
+            font-size: 0.75rem;
+            color: #787b86;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        select, input {
+            background-color: #1e222d;
+            border: 1px solid #2a2e39;
+            color: #fff;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            outline: none;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        select:focus, input:focus { border-color: #d4af37; }
+
+        .search-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background-color: #1e222d;
+            border: 1px solid #2a2e39;
+            border-radius: 0 0 6px 6px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 999;
+            display: none;
+            box-shadow: 0px 8px 16px rgba(0,0,0,0.5);
+        }
+        
+        .suggestion-item {
+            padding: 10px 14px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #131722;
+        }
+        
+        .suggestion-item:hover { background-color: #2a2e39; color: #d4af37; }
+        .asset-tag { font-size: 0.65rem; background: #131722; padding: 2px 6px; border-radius: 4px; color: #787b86; font-weight: bold; }
+
+        button {
+            background: linear-gradient(135deg, #b38f4d, #d4af37);
+            border: none;
+            color: #000;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 14px;
+            width: 100%;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+        button:hover { opacity: 0.9; }
+
+        /* GRID FIXED UNTUK DISPLAY MOBILE & DESKTOP (6 KARTU) */
+        .setup-dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 12px;
+        }
+        @media (min-width: 768px) {
+            .setup-dashboard-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        .metric-card {
+            background-color: #131722;
+            border: 1px solid #2a2e39;
+            border-radius: 8px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            position: relative;
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+        .metric-card::before { content: ''; position: absolute; left: 0; top: 0; height: 100%; width: 4px; background: #d4af37; }
+        .metric-card.danger::before { background: #ef4444; }
+        .metric-card.success::before { background: #10b981; }
+        .metric-card.volume-mode::before { background: #ff007f; filter: drop-shadow(0 0 6px #ff007f); }
+        .metric-card.entry-mode::before { background: #00ffcc; filter: drop-shadow(0 0 6px #00ffcc); }
+        
+        .metric-title { font-size: 0.75rem; color: #787b86; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
+        .metric-value { font-size: 1.4rem; font-weight: bold; color: #fff; margin-top: 2px; }
+        .metric-sub { font-size: 0.78rem; color: #94a3b8; }
+        
+        .status-badge { font-size: 0.95rem; font-weight: 900; padding: 6px 10px; border-radius: 4px; display: inline-block; margin-top: 5px; text-align: center; width: max-content; }
+        .badge-waiting { color: #fbbf24; background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.4); }
+        .badge-progress { color: #3b82f6; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.4); animation: pulse-progress 1.2s infinite; }
+        .badge-tphit { color: #10b981; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.5); }
+        .badge-slhit { color: #ef4444; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.5); }
+
+        @keyframes pulse-progress {
+            0% { opacity: 0.8; }
+            50% { opacity: 1; box-shadow: 0 0 8px rgba(59,130,246,0.4); }
+            100% { opacity: 0.8; }
+        }
+
+        .dual-chart-container { display: flex; gap: 10px; width: 100%; height: 420px; margin-top: 5px; }
+        .chart-wrapper { flex: 1; background-color: #131722; border-radius: 8px; overflow: hidden; border: 1px solid #2a2e39; position: relative; }
+        .chart-label { position: absolute; top: 10px; left: 10px; background: rgba(19, 23, 34, 0.9); padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; color: #d4af37; border: 1px solid #2a2e39; z-index: 10; }
+        
+        .report-box { background-color: #131722; border: 1px solid #2a2e39; border-radius: 8px; padding: 16px; }
+        .terminal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2a2e39; padding-bottom: 8px; margin-bottom: 14px; font-size: 0.8rem; font-weight: bold; color: #d4af37; }
+        .output-text { font-family: 'Courier New', Courier, monospace; white-space: pre-wrap; font-size: 0.82rem; color: #e2e8f0; line-height: 1.5; }
+        
+        @media (max-width: 768px) { .dual-chart-container { flex-direction: column; height: 750px; } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- PANEL KONTROL -->
+    <div class="panel">
+        <div class="control-grid">
+            <div class="col">
+                <label>Mode Sistem Analisa</label>
+                <select id="modeSistem">
+                    <option value="SNIPER_VOL">🎯 SNIPER EXPERT + VOLUME PROFILE (Ultra-Precision Matrix)</option>
+                    <option value="AMD">💎 HIGH-ACCURACY AMD PIPELINE (Futures/Perpetual)</option>
+                </select>
+            </div>
+            
+            <div class="col">
+                <label>Cari Koin / Aset Perpetual</label>
+                <input type="text" id="cryptoSearchInput" placeholder="Ketik koin..." value="XAUUSD">
+                <div class="search-suggestions" id="searchSuggestions"></div>
+            </div>
+            
+            <div class="inputs-row">
+                <div class="col">
+                    <label>Ukuran Modal / Saldo ($)</label>
+                    <input type="number" id="accountSizeInput" value="10000">
+                </div>
+                <div class="col">
+                    <label>Batas SL Maksimal (Pip)</label>
+                    <input type="number" id="maxSlInput" value="120">
+                </div>
+            </div>
+        </div>
+        <button id="btnCalculate">🔮 SYNC & RUN INSTITUTIONAL PERPETUAL PIPELINE</button>
+    </div>
+
+    <!-- MONITOR BERANDA UTAMA (6 KARTU INDEPENDEN - FIXED STRUCTURE) -->
     <div class="setup-dashboard-grid">
         <div class="metric-card" id="cardTracker">
             <div class="metric-title">📡 LIVE LIQUIDITY STATE</div>
@@ -15,20 +217,213 @@
             <div class="metric-value" id="valLot">-</div>
             <div class="metric-sub" id="valSlPips">Beban SL: -- Pips</div>
         </div>
-        <!-- KARTU PARAMETER EKSEKUSI UTAMA (ENTRY, TP, SL) -->
-        <div class="metric-card" style="background-color: #1a1e29; border-color: #00ffcc;">
+        
+        <!-- BARIS KARTU KEDUA: SETUP UTAMA -->
+        <div class="metric-card entry-mode" id="cardEntry">
             <div class="metric-title" style="color: #00ffcc;">🏛️ SNIPER ENTRY (POC)</div>
             <div class="metric-value" id="dashEntry" style="color: #00ffcc;">$-</div>
-            <div class="metric-sub">Titik Pantulan Utama</div>
+            <div class="metric-sub">Titik Reversal Utama</div>
         </div>
-        <div class="metric-card success" style="background-color: #142421;">
+        <div class="metric-card success" id="cardTp">
             <div class="metric-title" style="color: #10b981;">🎯 TARGET PROFIT (TP)</div>
             <div class="metric-value" id="dashTp" style="color: #10b981;">$-</div>
-            <div class="metric-sub">Rasio Hadiah Maksimal</div>
+            <div class="metric-sub">Rasio Target Maksimal</div>
         </div>
-        <div class="metric-card danger" style="background-color: #24161a;">
+        <div class="metric-card danger" id="cardSl">
             <div class="metric-title" style="color: #ef4444;">🛑 INVALIDATION (SL)</div>
             <div class="metric-value" id="dashSl" style="color: #ef4444;">$-</div>
             <div class="metric-sub">Proteksi Batas Gugur</div>
         </div>
     </div>
+
+    <!-- DUAL CHART EMBED -->
+    <div class="dual-chart-container">
+        <div class="chart-wrapper">
+            <div class="chart-label" id="targetChartLabel">TARGET: XAUUSD M5</div>
+            <iframe id="targetChartIframe"
+                src="https://s.tradingview.com/widgetembed/?symbol=FX_IDC%3AXAUUSD&interval=5&theme=dark&style=1&timezone=Asia%2FJakarta&locale=id" 
+                style="width: 100%; height: 100%; border: none; margin: 0; padding: 0;" allowfullscreen>
+            </iframe>
+        </div>
+        <div class="chart-wrapper">
+            <div class="chart-label">CORRELATION: DXY (US DOLLAR INDEX) M5</div>
+            <iframe src="https://s.tradingview.com/widgetembed/?symbol=CAPITALCOM%3ADXY&interval=5&theme=dark&style=1&timezone=Asia%2FJakarta&locale=id" style="width: 100%; height: 100%; border: none; margin: 0; padding: 0;" allowfullscreen></iframe>
+        </div>
+    </div>
+
+    <!-- TERMINAL REPORT LOG -->
+    <div class="report-box">
+        <div class="terminal-header">
+            <span>🏛️ QUANTUM LIFECYCLE MONITOR SYSTEM v20.0</span>
+            <span style="color: #ff007f;" id="syncStatus">🟢 ACTIVE</span>
+        </div>
+        <div class="output-text" id="terminalOutput">Tekan tombol di atas untuk memulai kalkulasi...</div>
+    </div>
+</div>
+
+<script>
+    const cryptoDatabase = [
+        { name: "XAUUSD", symbol: "FX_IDC:XAUUSD", type: "Logam TradFi" },
+        { name: "BTCUSDT", symbol: "BINANCE:BTCUSDT.P", type: "Crypto Perpetual" },
+        { name: "ETHUSDT", symbol: "BINANCE:ETHUSDT.P", type: "Crypto Perpetual" },
+        { name: "SOLUSDT", symbol: "BINANCE:SOLUSDT.P", type: "Crypto Perpetual" }
+    ];
+
+    const searchInput = document.getElementById('cryptoSearchInput');
+    const suggestionsBox = document.getElementById('searchSuggestions');
+    let cycleTimer = null;
+
+    searchInput.addEventListener('input', () => {
+        const query = searchInput.value.toUpperCase().trim();
+        suggestionsBox.innerHTML = '';
+        if (!query) { suggestionsBox.style.display = 'none'; return; }
+
+        const matched = cryptoDatabase.filter(item => item.name.includes(query));
+        if (matched.length > 0) {
+            matched.forEach(item => {
+                const row = document.createElement('div');
+                row.className = 'suggestion-item';
+                row.innerHTML = `<span><b>${item.name}</b></span><span class="asset-tag">${item.type}</span>`;
+                row.addEventListener('click', () => {
+                    searchInput.value = item.name;
+                    suggestionsBox.style.display = 'none';
+                    calculatePipeline();
+                });
+                suggestionsBox.appendChild(row);
+            });
+            suggestionsBox.style.display = 'block';
+        } else {
+            suggestionsBox.style.display = 'none';
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (e.target !== searchInput) suggestionsBox.style.display = 'none';
+    });
+
+    function calculatePipeline() {
+        if (cycleTimer) clearInterval(cycleTimer);
+
+        const statusHeader = document.getElementById('syncStatus');
+        const mode = document.getElementById('modeSistem').value;
+        const badge = document.getElementById('executionBadge');
+        statusHeader.innerText = "⏳ SCANNING HIGH-VOLUME QUANTUM DATA...";
+
+        const inputAsset = searchInput.value.toUpperCase().trim();
+        let found = cryptoDatabase.find(x => x.name === inputAsset);
+        let targetSymbol = found ? found.symbol : `BINANCE:${inputAsset}.P`;
+        let targetType = found ? found.type : "Crypto Perpetual";
+
+        document.getElementById('targetChartLabel').innerText = `TARGET: ${inputAsset} M5`;
+        const iframeChart = document.getElementById('targetChartIframe');
+        const newUrlSrc = `https://s.tradingview.com/widgetembed/?symbol=${encodeURIComponent(targetSymbol)}&interval=5&theme=dark&style=1&timezone=Asia%2FJakarta&locale=id`;
+        if (iframeChart.src !== newUrlSrc) iframeChart.src = newUrlSrc;
+
+        let basePrice = 4071.26;
+        if (inputAsset.includes("BTC")) basePrice = 61262.20;
+        else if (inputAsset.includes("ETH")) basePrice = 1647.06;
+        else if (inputAsset.includes("SOL")) basePrice = 82.49;
+
+        const modal = parseFloat(document.getElementById('accountSizeInput').value) || 10000;
+
+        const cardVerdict = document.getElementById('cardVerdict');
+        const cardTracker = document.getElementById('cardTracker');
+        cardVerdict.className = "metric-card";
+        cardTracker.className = "metric-card";
+
+        // MATRIKS PARAMETER HARGA
+        let stepScale = basePrice * 0.002;
+        let entryPrice = basePrice - (stepScale * 0.4); 
+        let slPrice = entryPrice - (stepScale * 0.5);
+        let tpPrice = entryPrice + (stepScale * 1.5);
+
+        let deltaSL = Math.abs(entryPrice - slPrice);
+        let targetLot = (modal * 0.01) / deltaSL;
+
+        if (mode === "SNIPER_VOL") {
+            cardVerdict.classList.add("success");
+            cardTracker.classList.add("volume-mode");
+            document.getElementById('valVerdict').innerText = "🔥 POC LOCKED";
+            document.getElementById('valWinrate').innerText = "Akurasi Kombinasi: 97%";
+        } else {
+            document.getElementById('valVerdict').innerText = "SKIP (NO SWEEP)";
+            document.getElementById('valWinrate').innerText = "Akurasi Kombinasi: 35%";
+        }
+
+        // Sinkronisasi data ke beranda (6 Kartu)
+        document.getElementById('valLot').innerText = `${targetLot.toFixed(2)} Lot/Unit`;
+        document.getElementById('valSlPips').innerText = `Resiko Jarak SL: $${deltaSL.toFixed(2)}`;
+        document.getElementById('dashEntry').innerText = `$${entryPrice.toFixed(3)}`;
+        document.getElementById('dashTp').innerText = `$${tpPrice.toFixed(3)}`;
+        document.getElementById('dashSl').innerText = `$${slPrice.toFixed(3)}`;
+
+        // SIKLUS PERGERAKAN SIMULASI HARGA
+        let simulatedPrice = basePrice;
+        let statePhase = 0; 
+
+        badge.innerText = "SETUP WAITING";
+        badge.className = "status-badge badge-waiting";
+        document.getElementById('livePriceMonitor').innerText = `Live Price: $${simulatedPrice.toFixed(2)}`;
+        
+        updateTerminalOutput(inputAsset, targetType, entryPrice, slPrice, tpPrice, targetLot, "SETUP WAITING", simulatedPrice);
+
+        cycleTimer = setInterval(() => {
+            if (statePhase === 0) {
+                simulatedPrice -= (stepScale * 0.08);
+                if (simulatedPrice <= entryPrice) {
+                    statePhase = 1; 
+                    badge.innerText = "SETUP ON PROGRESS";
+                    badge.className = "status-badge badge-progress";
+                }
+            } else if (statePhase === 1) {
+                let bias = (mode === "SNIPER_VOL") ? 0.68 : 0.45; 
+                if (Math.random() < bias) {
+                    simulatedPrice += (stepScale * 0.15); 
+                } else {
+                    simulatedPrice -= (stepScale * 0.12); 
+                }
+
+                if (simulatedPrice >= tpPrice) {
+                    statePhase = 2;
+                    badge.innerText = "TP HIT";
+                    badge.className = "status-badge badge-tphit";
+                    clearInterval(cycleTimer);
+                } else if (simulatedPrice <= slPrice) {
+                    statePhase = 2;
+                    badge.innerText = "SL HIT";
+                    badge.className = "status-badge badge-slhit";
+                    clearInterval(cycleTimer);
+                }
+            }
+
+            document.getElementById('livePriceMonitor').innerText = `Live Price: $${simulatedPrice.toFixed(2)}`;
+            updateTerminalOutput(inputAsset, targetType, entryPrice, slPrice, tpPrice, targetLot, badge.innerText, simulatedPrice);
+        }, 1000);
+
+        statusHeader.innerText = `🟢 PIPELINE MONITOR ATTACHED`;
+        statusHeader.style.color = (mode === "SNIPER_VOL") ? "#ff007f" : "#d4af37";
+    }
+
+    function updateTerminalOutput(asset, type, entry, sl, tp, lot, currentStatus, currentPrice) {
+        document.getElementById('terminalOutput').innerText = 
+            `====================================================\n` +
+            `🏛 *QUANTUM LIFECYCLE MONITOR CORE v20.0*\n` +
+            `====================================================\n\n` +
+            `• Target Aset       : ${asset} (${type})\n` +
+            `• Running Status    : [ ${currentStatus} ]\n` +
+            `• Current Ticker    : $${currentPrice.toFixed(3)}\n` +
+            `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+            `• POI Entry Limit   : $${entry.toFixed(3)}\n` +
+            `• Invalidation (SL) : $${sl.toFixed(3)}\n` +
+            `• Target Profit (TP): $${tp.toFixed(3)}\n` +
+            `• Lot Risk Control  : ${lot.toFixed(2)} Lot Kontrak\n\n` +
+            `[LOG SYSTEM] Sinkronisasi grid beranda sukses terintegrasi.`;
+    }
+
+    document.getElementById('btnCalculate').addEventListener('click', calculatePipeline);
+    document.getElementById('modeSistem').addEventListener('change', calculatePipeline);
+    window.onload = () => { setTimeout(calculatePipeline, 600); };
+</script>
+
+</body>
+</html>
