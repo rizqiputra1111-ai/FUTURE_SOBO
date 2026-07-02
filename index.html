@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Institutional Perpetual Dashboard v21.5 - Restoration Complete</title>
+    <title>AI Institutional Perpetual Dashboard v22.0 - Fixed RR Matrix</title>
     <style>
         body {
             font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
@@ -111,7 +111,6 @@
         }
         button:hover { opacity: 0.9; }
 
-        /* GRID UTAMA RESPONSIV UNTUK AKOMODASI 8 KARTU SECARA SEJAJAR */
         .setup-dashboard-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -166,7 +165,7 @@
 <body>
 
 <div class="container">
-    <!-- PANEL KONTROL ORIGINAL -->
+    <!-- PANEL KONTROL -->
     <div class="panel">
         <div class="control-grid">
             <div class="col">
@@ -197,7 +196,7 @@
         <button id="btnCalculate">🔮 SYNC & RUN INSTITUTIONAL PERPETUAL PIPELINE</button>
     </div>
 
-    <!-- MONITOR BERANDA UTAMA (KARTU STATUS, STRATEGI, ENTRY, SL + MULTI TP SEJAJAR) -->
+    <!-- MONITOR BERANDA UTAMA (8 KARTU SEJAJAR) -->
     <div class="setup-dashboard-grid">
         <div class="metric-card" id="cardTracker">
             <div class="metric-title">📡 LIVE LIQUIDITY STATE</div>
@@ -225,25 +224,25 @@
             <div class="metric-sub">Proteksi Batas Gugur</div>
         </div>
 
-        <!-- TARGET PROFIT 1, 2, DAN 3 SEJAJAR DI SAMPINGNYA -->
+        <!-- TARGET PROFIT FIX RR MURNI (1:2, 1:3, 1:4+) -->
         <div class="metric-card success" id="cardTp1">
-            <div class="metric-title" style="color: #10b981;">🎯 TARGET PROFIT 1 (Scalp)</div>
+            <div class="metric-title" style="color: #10b981;">🎯 TARGET PROFIT 1 (RR 1:2)</div>
             <div class="metric-value" id="dashTp1" style="color: #10b981;">$-</div>
-            <div class="metric-sub">Rasio RR 1:1.5</div>
+            <div class="metric-sub">Scalp Target</div>
         </div>
         <div class="metric-card success" id="cardTp2">
-            <div class="metric-title" style="color: #10b981;">🎯 TARGET PROFIT 2 (Intra)</div>
+            <div class="metric-title" style="color: #10b981;">🎯 TARGET PROFIT 2 (RR 1:3)</div>
             <div class="metric-value" id="dashTp2" style="color: #10b981;">$-</div>
-            <div class="metric-sub">Rasio RR 1:2.5</div>
+            <div class="metric-sub">Intraday Target</div>
         </div>
         <div class="metric-card success" id="cardTp3">
-            <div class="metric-title" style="color: #10b981;">🎯 TARGET PROFIT 3 (Swing)</div>
+            <div class="metric-title" style="color: #10b981;">🎯 TARGET PROFIT 3 (RR 1:4+)</div>
             <div class="metric-value" id="dashTp3" style="color: #10b981;">$-</div>
-            <div class="metric-sub">Rasio RR 1:4.0</div>
+            <div class="metric-sub">Institutional Swing</div>
         </div>
     </div>
 
-    <!-- DUAL CHART ORIGINAL RESTORED -->
+    <!-- DUAL CHART ORIGINAL -->
     <div class="dual-chart-container">
         <div class="chart-wrapper">
             <div class="chart-label" id="targetChartLabel">TARGET: XAUUSD M5</div>
@@ -258,10 +257,10 @@
         </div>
     </div>
 
-    <!-- TERMINAL REPORT LOG ORIGINAL -->
+    <!-- TERMINAL REPORT LOG -->
     <div class="report-box">
         <div class="terminal-header">
-            <span>🏛️ QUANTUM LIFECYCLE MONITOR SYSTEM v21.5</span>
+            <span>🏛️ QUANTUM RISK-REWARD ENGINE v22.0</span>
             <span style="color: #ff007f;" id="syncStatus">🟢 ACTIVE</span>
         </div>
         <div class="output-text" id="terminalOutput">Tekan tombol di atas untuk memulai kalkulasi...</div>
@@ -314,7 +313,7 @@
         const statusHeader = document.getElementById('syncStatus');
         const mode = document.getElementById('modeSistem').value;
         const badge = document.getElementById('executionBadge');
-        statusHeader.innerText = "⏳ SCANNING HIGH-VOLUME QUANTUM DATA...";
+        statusHeader.innerText = "⏳ SCALPING RR ENGINE CALCULATION...";
 
         const inputAsset = searchInput.value.toUpperCase().trim();
         let found = cryptoDatabase.find(x => x.name === inputAsset);
@@ -327,7 +326,8 @@
         if (iframeChart.src !== newUrlSrc) iframeChart.src = newUrlSrc;
 
         let basePrice = 4071.26;
-        if (inputAsset.includes("BTC")) basePrice = 61262.20;
+        if (inputAsset.includes("XAU")) basePrice = 2350.00; // Standar Gold base default
+        else if (inputAsset.includes("BTC")) basePrice = 61262.20;
         else if (inputAsset.includes("ETH")) basePrice = 1647.06;
         else if (inputAsset.includes("SOL")) basePrice = 82.49;
 
@@ -338,16 +338,17 @@
         cardVerdict.className = "metric-card";
         cardTracker.className = "metric-card";
 
-        // MATRIKS MULTI-TARGET PARAMETER HARGA
+        // LOGIKA PENENTUAN MATRIKS RISK REWARD RASIO MURNI
         let stepScale = basePrice * 0.002;
-        let entryPrice = basePrice - (stepScale * 0.4); 
-        let slPrice = entryPrice - (stepScale * 0.5);
-        
-        let tp1Price = entryPrice + (stepScale * 1.5);
-        let tp2Price = entryPrice + (stepScale * 2.5);
-        let tp3Price = entryPrice + (stepScale * 4.0);
+        let entryPrice = basePrice; 
+        let slPrice = entryPrice - (stepScale * 0.5); // Jarak Stop Loss dasar
+        let deltaSL = Math.abs(entryPrice - slPrice); // Nilai 1R Risiko
 
-        let deltaSL = Math.abs(entryPrice - slPrice);
+        // Pemetaan Target Berdasarkan Kelipatan Nilai Risiko (R) yang Presisi
+        let tp1Price = entryPrice + (deltaSL * 2); // RR 1:2 Murni
+        let tp2Price = entryPrice + (deltaSL * 3); // RR 1:3 Murni
+        let tp3Price = entryPrice + (deltaSL * 4.5); // RR 1:4.5 (Representasi 1:4+)
+
         let targetLot = (modal * 0.01) / deltaSL;
 
         if (mode === "SNIPER_VOL") {
@@ -360,7 +361,7 @@
             document.getElementById('valWinrate').innerText = "Akurasi Kombinasi: 35%";
         }
 
-        // Sinkronisasi data ke 8 Kartu Utama
+        // Tampilkan hasil ke dashboard
         document.getElementById('valLot').innerText = `${targetLot.toFixed(2)} Lot/Unit`;
         document.getElementById('valSlPips').innerText = `Resiko Jarak SL: $${deltaSL.toFixed(2)}`;
         document.getElementById('dashEntry').innerText = `$${entryPrice.toFixed(3)}`;
@@ -370,7 +371,7 @@
         document.getElementById('dashTp3').innerText = `$${tp3Price.toFixed(3)}`;
 
         // ENGINE SIMULASI LIFECYCLE HARGA
-        let simulatedPrice = basePrice;
+        let simulatedPrice = basePrice + (stepScale * 0.2);
         let statePhase = 0; 
 
         badge.innerText = "SETUP WAITING";
@@ -381,24 +382,23 @@
 
         cycleTimer = setInterval(() => {
             if (statePhase === 0) {
-                simulatedPrice -= (stepScale * 0.08);
+                simulatedPrice -= (stepScale * 0.05);
                 if (simulatedPrice <= entryPrice) {
                     statePhase = 1; 
                     badge.innerText = "SETUP ON PROGRESS";
                     badge.className = "status-badge badge-progress";
                 }
             } else if (statePhase === 1) {
-                let bias = (mode === "SNIPER_VOL") ? 0.70 : 0.45; 
+                let bias = (mode === "SNIPER_VOL") ? 0.72 : 0.45; 
                 if (Math.random() < bias) {
-                    simulatedPrice += (stepScale * 0.15); 
+                    simulatedPrice += (stepScale * 0.12); 
                 } else {
-                    simulatedPrice -= (stepScale * 0.12); 
+                    simulatedPrice -= (stepScale * 0.10); 
                 }
 
-                // Cek status pencapaian target bertahap
                 if (simulatedPrice >= tp3Price) {
                     statePhase = 2;
-                    badge.innerText = "TP HIT";
+                    badge.innerText = "TP3 HIT";
                     badge.className = "status-badge badge-tphit";
                     clearInterval(cycleTimer);
                 } else if (simulatedPrice <= slPrice) {
@@ -420,7 +420,7 @@
     function updateTerminalOutput(asset, type, entry, sl, tp1, tp2, tp3, lot, currentStatus, currentPrice) {
         document.getElementById('terminalOutput').innerText = 
             `====================================================\n` +
-            `🏛️ QUANTUM LIFECYCLE MONITOR CORE v21.5\n` +
+            `🏛️ QUANTUM RISK-REWARD ENGINE v22.0\n` +
             `====================================================\n\n` +
             `• Target Aset       : ${asset} (${type})\n` +
             `• Running Status    : [ ${currentStatus} ]\n` +
@@ -428,11 +428,11 @@
             `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
             `• POI Entry Limit   : $${entry.toFixed(3)}\n` +
             `• Invalidation (SL) : $${sl.toFixed(3)}\n` +
-            `• Target Profit 1   : $${tp1.toFixed(3)} (Scalp Target)\n` +
-            `• Target Profit 2   : $${tp2.toFixed(3)} (Intraday Target)\n` +
-            `• Target Profit 3   : $${tp3.toFixed(3)} (Institutional Target)\n` +
+            `• Target Profit 1   : $${tp1.toFixed(3)} [Murni RR 1:2]\n` +
+            `• Target Profit 2   : $${tp2.toFixed(3)} [Murni RR 1:3]\n` +
+            `• Target Profit 3   : $${tp3.toFixed(3)} [Murni RR 1:4+]\n` +
             `• Lot Risk Control  : ${lot.toFixed(2)} Lot Kontrak\n\n` +
-            `[LOG SYSTEM] Pemulihan layout sukses. Seluruh komponen berjalan seimbang.`;
+            `[LOG SYSTEM] Konfigurasi rasio aman 1:2, 1:3, dan 1:4+ berhasil disuntikkan secara presisi.`;
     }
 
     document.getElementById('btnCalculate').addEventListener('click', calculatePipeline);
@@ -442,3 +442,4 @@
 
 </body>
 </html>
+ 
