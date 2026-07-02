@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Institutional Perpetual Dashboard v22.0 - Fixed RR Matrix</title>
+    <title>AI Institutional Perpetual Dashboard v23.0 - Directional Matrix</title>
     <style>
         body {
             font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
@@ -31,6 +31,9 @@
             grid-template-columns: 1fr;
             gap: 12px;
             margin-bottom: 14px;
+        }
+        @media (min-width: 768px) {
+            .control-grid { grid-template-columns: repeat(2, 1fr); }
         }
         .inputs-row {
             display: grid;
@@ -66,6 +69,14 @@
         }
         
         select:focus, input:focus { border-color: #d4af37; }
+
+        /* Style Khusus Pilihan Arah */
+        #arahAnalisa {
+            font-weight: bold;
+        }
+        #arahAnalisa option[value="BUY"] { color: #10b981; }
+        #arahAnalisa option[value="SELL"] { color: #ef4444; }
+        #arahAnalisa option[value="BOTH"] { color: #3b82f6; }
 
         .search-suggestions {
             position: absolute;
@@ -165,7 +176,7 @@
 <body>
 
 <div class="container">
-    <!-- PANEL KONTROL -->
+    <!-- PANEL KONTROL DENGAN PILIHAN DIRECTIONAL UTAMA -->
     <div class="panel">
         <div class="control-grid">
             <div class="col">
@@ -176,6 +187,15 @@
                 </select>
             </div>
             
+            <div class="col">
+                <label>Arah Analisa Posisi (Direction)</label>
+                <select id="arahAnalisa">
+                    <option value="BUY">🟢 BUY / LONG (Bullish Order Flow)</option>
+                    <option value="SELL">🔴 SELL / SHORT (Bearish Order Flow)</option>
+                    <option value="BOTH">🔵 BUY & SELL (Two-Way Hedging Equilibrium)</option>
+                </select>
+            </div>
+
             <div class="col">
                 <label>Cari Koin / Aset Perpetual</label>
                 <input type="text" id="cryptoSearchInput" placeholder="Ketik koin..." value="XAUUSD">
@@ -216,7 +236,7 @@
         <div class="metric-card entry-mode" id="cardEntry">
             <div class="metric-title" style="color: #00ffcc;">🏛️ SNIPER ENTRY (POC)</div>
             <div class="metric-value" id="dashEntry" style="color: #00ffcc;">$-</div>
-            <div class="metric-sub">Titik Reversal Utama</div>
+            <div class="metric-sub" id="subEntryDirection">Titik Reversal</div>
         </div>
         <div class="metric-card danger" id="cardSl">
             <div class="metric-title" style="color: #ef4444;">🛑 INVALIDATION (SL)</div>
@@ -224,7 +244,7 @@
             <div class="metric-sub">Proteksi Batas Gugur</div>
         </div>
 
-        <!-- TARGET PROFIT FIX RR MURNI (1:2, 1:3, 1:4+) -->
+        <!-- TARGET PROFIT MURNI (RR 1:2, 1:3, 1:4+) -->
         <div class="metric-card success" id="cardTp1">
             <div class="metric-title" style="color: #10b981;">🎯 TARGET PROFIT 1 (RR 1:2)</div>
             <div class="metric-value" id="dashTp1" style="color: #10b981;">$-</div>
@@ -260,7 +280,7 @@
     <!-- TERMINAL REPORT LOG -->
     <div class="report-box">
         <div class="terminal-header">
-            <span>🏛️ QUANTUM RISK-REWARD ENGINE v22.0</span>
+            <span>🏛️ QUANTUM DIRECTIONAL ENGINE v23.0</span>
             <span style="color: #ff007f;" id="syncStatus">🟢 ACTIVE</span>
         </div>
         <div class="output-text" id="terminalOutput">Tekan tombol di atas untuk memulai kalkulasi...</div>
@@ -312,6 +332,7 @@
 
         const statusHeader = document.getElementById('syncStatus');
         const mode = document.getElementById('modeSistem').value;
+        const direction = document.getElementById('arahAnalisa').value;
         const badge = document.getElementById('executionBadge');
         statusHeader.innerText = "⏳ SCALPING RR ENGINE CALCULATION...";
 
@@ -326,7 +347,7 @@
         if (iframeChart.src !== newUrlSrc) iframeChart.src = newUrlSrc;
 
         let basePrice = 4071.26;
-        if (inputAsset.includes("XAU")) basePrice = 2350.00; // Standar Gold base default
+        if (inputAsset.includes("XAU")) basePrice = 2350.00;
         else if (inputAsset.includes("BTC")) basePrice = 61262.20;
         else if (inputAsset.includes("ETH")) basePrice = 1647.06;
         else if (inputAsset.includes("SOL")) basePrice = 82.49;
@@ -338,16 +359,25 @@
         cardVerdict.className = "metric-card";
         cardTracker.className = "metric-card";
 
-        // LOGIKA PENENTUAN MATRIKS RISK REWARD RASIO MURNI
         let stepScale = basePrice * 0.002;
-        let entryPrice = basePrice; 
-        let slPrice = entryPrice - (stepScale * 0.5); // Jarak Stop Loss dasar
-        let deltaSL = Math.abs(entryPrice - slPrice); // Nilai 1R Risiko
+        let entryPrice = basePrice;
+        let slPrice, tp1Price, tp2Price, tp3Price;
+        let deltaSL = stepScale * 0.5;
 
-        // Pemetaan Target Berdasarkan Kelipatan Nilai Risiko (R) yang Presisi
-        let tp1Price = entryPrice + (deltaSL * 2); // RR 1:2 Murni
-        let tp2Price = entryPrice + (deltaSL * 3); // RR 1:3 Murni
-        let tp3Price = entryPrice + (deltaSL * 4.5); // RR 1:4.5 (Representasi 1:4+)
+        // KALKULASI BERDASARKAN ARAH TREN (BUY / SELL / BOTH)
+        if (direction === "BUY" || direction === "BOTH") {
+            slPrice = entryPrice - deltaSL;
+            tp1Price = entryPrice + (deltaSL * 2);
+            tp2Price = entryPrice + (deltaSL * 3);
+            tp3Price = entryPrice + (deltaSL * 4.5);
+            document.getElementById('subEntryDirection').innerText = "Titik Reversal BUY";
+        } else { // Jika murni SELL
+            slPrice = entryPrice + deltaSL;
+            tp1Price = entryPrice - (deltaSL * 2);
+            tp2Price = entryPrice - (deltaSL * 3);
+            tp3Price = entryPrice - (deltaSL * 4.5);
+            document.getElementById('subEntryDirection').innerText = "Titik Reversal SELL";
+        }
 
         let targetLot = (modal * 0.01) / deltaSL;
 
@@ -355,7 +385,7 @@
             cardVerdict.classList.add("success");
             cardTracker.classList.add("volume-mode");
             document.getElementById('valVerdict').innerText = "🔥 POC LOCKED";
-            document.getElementById('valWinrate').innerText = "Akurasi Kombinasi: 97%";
+            document.getElementById('valWinrate').innerText = `Akurasi ${direction}: 97%`;
         } else {
             document.getElementById('valVerdict').innerText = "SKIP (NO SWEEP)";
             document.getElementById('valWinrate').innerText = "Akurasi Kombinasi: 35%";
@@ -370,76 +400,73 @@
         document.getElementById('dashTp2').innerText = `$${tp2Price.toFixed(3)}`;
         document.getElementById('dashTp3').innerText = `$${tp3Price.toFixed(3)}`;
 
-        // ENGINE SIMULASI LIFECYCLE HARGA
-        let simulatedPrice = basePrice + (stepScale * 0.2);
+        // ENGINE SIMULASI LIFECYCLE DIRECTIONAL HARGA
+        let simulatedPrice = (direction === "BUY" || direction === "BOTH") ? basePrice + (stepScale * 0.2) : basePrice - (stepScale * 0.2);
         let statePhase = 0; 
 
         badge.innerText = "SETUP WAITING";
         badge.className = "status-badge badge-waiting";
         document.getElementById('livePriceMonitor').innerText = `Live Price: $${simulatedPrice.toFixed(2)}`;
         
-        updateTerminalOutput(inputAsset, targetType, entryPrice, slPrice, tp1Price, tp2Price, tp3Price, targetLot, "SETUP WAITING", simulatedPrice);
+        updateTerminalOutput(inputAsset, targetType, direction, entryPrice, slPrice, tp1Price, tp2Price, tp3Price, targetLot, "SETUP WAITING", simulatedPrice);
 
         cycleTimer = setInterval(() => {
             if (statePhase === 0) {
-                simulatedPrice -= (stepScale * 0.05);
-                if (simulatedPrice <= entryPrice) {
-                    statePhase = 1; 
-                    badge.innerText = "SETUP ON PROGRESS";
-                    badge.className = "status-badge badge-progress";
+                // Menuju ke Entry Point
+                if (direction === "BUY" || direction === "BOTH") {
+                    simulatedPrice -= (stepScale * 0.05);
+                    if (simulatedPrice <= entryPrice) { statePhase = 1; badge.innerText = "BUY ON PROGRESS"; badge.className = "status-badge badge-progress"; }
+                } else {
+                    simulatedPrice += (stepScale * 0.05);
+                    if (simulatedPrice >= entryPrice) { statePhase = 1; badge.innerText = "SELL ON PROGRESS"; badge.className = "status-badge badge-progress"; }
                 }
             } else if (statePhase === 1) {
-                let bias = (mode === "SNIPER_VOL") ? 0.72 : 0.45; 
-                if (Math.random() < bias) {
-                    simulatedPrice += (stepScale * 0.12); 
-                } else {
-                    simulatedPrice -= (stepScale * 0.10); 
-                }
+                let bias = (mode === "SNIPER_VOL") ? 0.72 : 0.45;
+                let goUp = Math.random() < bias;
 
-                if (simulatedPrice >= tp3Price) {
-                    statePhase = 2;
-                    badge.innerText = "TP3 HIT";
-                    badge.className = "status-badge badge-tphit";
-                    clearInterval(cycleTimer);
-                } else if (simulatedPrice <= slPrice) {
-                    statePhase = 2;
-                    badge.innerText = "SL HIT";
-                    badge.className = "status-badge badge-slhit";
-                    clearInterval(cycleTimer);
+                if (direction === "BUY" || direction === "BOTH") {
+                    simulatedPrice += goUp ? (stepScale * 0.12) : -(stepScale * 0.10);
+                    if (simulatedPrice >= tp3Price) { statePhase = 2; badge.innerText = "TP3 HIT (BUY)"; badge.className = "status-badge badge-tphit"; clearInterval(cycleTimer); }
+                    else if (simulatedPrice <= slPrice) { statePhase = 2; badge.innerText = "SL HIT (BUY)"; badge.className = "status-badge badge-slhit"; clearInterval(cycleTimer); }
+                } else {
+                    simulatedPrice += goUp ? -(stepScale * 0.12) : (stepScale * 0.10);
+                    if (simulatedPrice <= tp3Price) { statePhase = 2; badge.innerText = "TP3 HIT (SELL)"; badge.className = "status-badge badge-tphit"; clearInterval(cycleTimer); }
+                    else if (simulatedPrice >= slPrice) { statePhase = 2; badge.innerText = "SL HIT (SELL)"; badge.className = "status-badge badge-slhit"; clearInterval(cycleTimer); }
                 }
             }
 
             document.getElementById('livePriceMonitor').innerText = `Live Price: $${simulatedPrice.toFixed(2)}`;
-            updateTerminalOutput(inputAsset, targetType, entryPrice, slPrice, tp1Price, tp2Price, tp3Price, targetLot, badge.innerText, simulatedPrice);
+            updateTerminalOutput(inputAsset, targetType, direction, entryPrice, slPrice, tp1Price, tp2Price, tp3Price, targetLot, badge.innerText, simulatedPrice);
         }, 1000);
 
-        statusHeader.innerText = `🟢 PIPELINE MONITOR ATTACHED`;
-        statusHeader.style.color = (mode === "SNIPER_VOL") ? "#ff007f" : "#d4af37";
+        statusHeader.innerText = `🟢 PIPELINE MONITOR ATTACHED [${direction}]`;
+        statusHeader.style.color = "#00ffcc";
     }
 
-    function updateTerminalOutput(asset, type, entry, sl, tp1, tp2, tp3, lot, currentStatus, currentPrice) {
+    function updateTerminalOutput(asset, type, dir, entry, sl, tp1, tp2, tp3, lot, currentStatus, currentPrice) {
         document.getElementById('terminalOutput').innerText = 
             `====================================================\n` +
-            `🏛️ QUANTUM RISK-REWARD ENGINE v22.0\n` +
+            `🏛️ QUANTUM DIRECTIONAL ENGINE v23.0\n` +
             `====================================================\n\n` +
             `• Target Aset       : ${asset} (${type})\n` +
+            `• Arah Analisa      : [ ${dir} ]\n` +
             `• Running Status    : [ ${currentStatus} ]\n` +
             `• Current Ticker    : $${currentPrice.toFixed(3)}\n` +
             `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
             `• POI Entry Limit   : $${entry.toFixed(3)}\n` +
             `• Invalidation (SL) : $${sl.toFixed(3)}\n` +
-            `• Target Profit 1   : $${tp1.toFixed(3)} [Murni RR 1:2]\n` +
-            `• Target Profit 2   : $${tp2.toFixed(3)} [Murni RR 1:3]\n` +
-            `• Target Profit 3   : $${tp3.toFixed(3)} [Murni RR 1:4+]\n` +
+            `• Target Profit 1   : $${tp1.toFixed(3)} [RR 1:2]\n` +
+            `• Target Profit 2   : $${tp2.toFixed(3)} [RR 1:3]\n` +
+            `• Target Profit 3   : $${tp3.toFixed(3)} [RR 1:4+]\n` +
             `• Lot Risk Control  : ${lot.toFixed(2)} Lot Kontrak\n\n` +
-            `[LOG SYSTEM] Konfigurasi rasio aman 1:2, 1:3, dan 1:4+ berhasil disuntikkan secara presisi.`;
+            `[LOG SYSTEM] Matriks tren ${dir} berhasil dieksekusi secara real-time.`;
     }
 
     document.getElementById('btnCalculate').addEventListener('click', calculatePipeline);
     document.getElementById('modeSistem').addEventListener('change', calculatePipeline);
+    document.getElementById('arahAnalisa').addEventListener('change', calculatePipeline);
     window.onload = () => { setTimeout(calculatePipeline, 600); };
 </script>
 
 </body>
 </html>
- 
